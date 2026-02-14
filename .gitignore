@@ -18,3 +18,4 @@ test/version_tmp
 tmp
 .sass-cache/
 lib/cheatset/templates/template.html
+*.docset/

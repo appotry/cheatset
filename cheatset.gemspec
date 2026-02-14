@@ -1,5 +1,6 @@
-# coding: utf-8
-lib = File.expand_path('../lib', __FILE__)
+# frozen_string_literal: true
+
+lib = File.expand_path('lib', __dir__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'cheatset/version'
 
@@ -11,21 +12,21 @@ Gem::Specification.new do |spec|
   spec.summary       = spec.description
   spec.homepage      = 'https://github.com/Kapeli/cheatset'
   spec.license       = 'MIT'
+  spec.required_ruby_version = '>= 2.7'
 
   spec.files         = `git ls-files`.split($/)
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
-  spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ['lib']
 
-  spec.add_development_dependency 'bundler', '~> 1.3'
+  spec.add_development_dependency 'bundler', '>= 2.0'
   spec.add_development_dependency 'rake'
 
-  spec.add_dependency 'thor', '>= 1.0.1', '< 2.0'
-  spec.add_dependency 'haml', '> 5.2', '< 6.0'
-  spec.add_dependency 'sqlite3', '>= 1.3.13', '< 1.4'
-  spec.add_dependency 'plist', '>= 3.5.0', '< 4.0'
-  spec.add_dependency 'redcarpet', '>= 3.5.1', '< 4.0'
-  spec.add_dependency 'rouge', '>= 3.26.0', '< 4.0'
-  spec.add_dependency 'sanitize', '>= 5.2.1', '< 6.0'
-  spec.add_dependency 'unindent', '>= 1.0', '< 1.1'
+  spec.add_dependency 'thor', '>= 1.0.1'
+  spec.add_dependency 'haml', '>= 5.2'
+  spec.add_dependency 'sqlite3', '>= 1.6'
+  spec.add_dependency 'plist', '>= 3.5.0'
+  spec.add_dependency 'redcarpet', '>= 3.5.1'
+  spec.add_dependency 'rouge', '>= 3.26.0'
+  spec.add_dependency 'sanitize', '>= 5.2.1'
+  spec.add_dependency 'unindent', '>= 1.0'
 end
