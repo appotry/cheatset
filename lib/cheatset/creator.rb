@@ -2,7 +2,6 @@ require 'plist'
 require 'sqlite3'
 require 'fileutils'
 require 'haml'
-require 'ostruct'
 require 'cgi'
 require 'pathname'
 
@@ -28,11 +27,28 @@ class Cheatset::Creator
     File.expand_path('../templates', __FILE__)
   end
 
+  # Haml 6+ uses Template.new; Haml 5.x uses Engine.new
+  def render_haml(template, scope)
+    if defined?(Haml::Template)
+      Haml::Template.new { template }.render(scope)
+    else
+      Haml::Engine.new(template).render(scope)
+    end
+  end
+
+  # sqlite3 2.x uses execute(sql, bind_array); sqlite3 1.x uses execute(sql, *bind_vars)
+  def db_execute(db, sql, bind_vars)
+    if Gem::Version.new(SQLite3::VERSION) >= Gem::Version.new('2.0')
+      db.execute(sql, bind_vars)
+    else
+      db.execute(sql, *bind_vars)
+    end
+  end
+
   def generate_html_file
     # HTML
     template = File.read("#{tpl_path}/template.haml")
-    engine = Haml::Engine.new(template)
-    out = engine.render(@cheatsheet)
+    out = render_haml(template, @cheatsheet)
     doc_path = "#{@path}Resources/Documents/"
     FileUtils.mkdir_p(doc_path)
     File.open("#{doc_path}index.html", 'w') { |file| file.write(out) }
@@ -82,43 +98,43 @@ class Cheatset::Creator
     SQL
 
     sql = 'INSERT INTO searchIndex(name, type, path) VALUES (?, ?, ?)'
-    db.execute(sql, @cheatsheet.title, 'Category',
-               "index.html")
+    bind_vars = [@cheatsheet.title, 'Category', "index.html"]
+    db_execute(db, sql, bind_vars)
 
     @cheatsheet.categories.each do |category|
       category_strip = CGI.escape(category.id.strip).gsub(/\//, '%252F').gsub(/\+/, '%20');
       if @cheatsheet.title != category.id
-        db.execute(sql, category.id, 'Category',
-                 "index.html\#//dash_ref/Category/#{category_strip}/1")
+        db_execute(db, sql, [category.id, 'Category',
+                 "index.html\#//dash_ref/Category/#{category_strip}/1"])
       end
       category.entries.each_with_index do |entry, index|
         first_command = nil;
         if entry.command && entry.command.length > 0
           first_command = entry.command.first
         end
-        href = (entry.name || entry.index_name) ? "index.html\#//dash_ref_#{category_strip}/Entry/#{CGI.escape((entry.index_name) ? entry.index_name.strip : entry.tags_stripped_name.strip).gsub(/\//, '%252F').gsub(/\+/, '%20')}/0" : (first_command) ? "index.html\#//dash_ref_#{category_strip}/Command/#{URI.escape(first_command).gsub(/\//, '%252F').gsub(/\+/, '%20')}/0" : ""
+        href = (entry.name || entry.index_name) ? "index.html\#//dash_ref_#{category_strip}/Entry/#{CGI.escape((entry.index_name) ? entry.index_name.strip : entry.tags_stripped_name.strip).gsub(/\//, '%252F').gsub(/\+/, '%20')}/0" : (first_command) ? "index.html\#//dash_ref_#{category_strip}/Command/#{CGI.escape(first_command).gsub(/\//, '%252F').gsub(/\+/, '%20')}/0" : ""
         if entry.command
           entry.command.each do |command|
             if(!command.strip.empty? && !entry.not_in_main_index)
-              db.execute(sql, command.strip, 'Command', href)
+              db_execute(db, sql, [command.strip, 'Command', href])
             end
           end
         end
         if entry.td_command
           entry.td_command.each do |command|
             if(!command.strip.empty? && !entry.not_in_main_index)
-              db.execute(sql, command.strip, 'Command', href)
+              db_execute(db, sql, [command.strip, 'Command', href])
             end
           end
         end
         if entry.name || entry.index_name
           if(!entry.not_in_main_index)
-            db.execute(sql, (entry.index_name) ? entry.index_name.strip : entry.tags_stripped_name.strip, 'Entry', href)
+            db_execute(db, sql, [(entry.index_name) ? entry.index_name.strip : entry.tags_stripped_name.strip, 'Entry', href])
           end
         end
         if entry.extra_index_name
           entry.extra_index_name.each do |extra_index_name|
-            db.execute(sql, extra_index_name.strip, 'Entry', href)
+            db_execute(db, sql, [extra_index_name.strip, 'Entry', href])
           end
         end
       end
