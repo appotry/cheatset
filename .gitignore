@@ -19,3 +19,5 @@ tmp
 .sass-cache/
 lib/cheatset/templates/template.html
 *.docset/
+CLAUDE.md
+.claude/settings.local.json
